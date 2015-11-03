@@ -8,11 +8,46 @@ output:
 
 ## Loading and preprocessing the data
 
+uzip the file
+
+```{r,eval=T,echo=F}
+setwd("D:\\git\\reproucible\\RepData_PeerAssessment1\\")
+```
+
+```{r,eval=T,echo=T}
+unzip(zipfile = "activity.zip") #uzip zip file 
+dat=read.csv(file="activity.csv",header = T,sep = ",",
+         stringsAsFactors = F) #read data
+dat$date=as.POSIXct(dat$date) #change date colume type
+str(dat)
+head(dat)
+
+```
+
 
 
 ## What is mean total number of steps taken per day?
 
+```{r,eval=T,echo=T}
+tmp=dat[complete.cases(dat),] #without NA
 
+# Calculate the total number of steps taken per day
+per_day_steps=as.vector(tapply(tmp$steps,tmp$date,sum)) 
+date=names(tapply(tmp$steps,tmp$date,sum))
+per_day_steps=data.frame(total_steps=per_day_steps,
+                         date=date,stringsAsFactors = F)
+#per_day_steps$date=as.Date(per_day_steps$date,format="%Y-%m-%d")
+#  Make a histogram of the total number of steps taken each day
+library(ggplot2)
+library(scales)
+
+g=ggplot(data = per_day_steps,aes(x=date,y=total_steps))+geom_boxplot()
+g+scale_x_date(labels = date_format("%d"))
+tapply(tmp$steps,tmp$date,mean)
+#mean of the total number of steps taken per day
+tapply(tmp$steps,tmp$date,median)  
+#median of the total number of steps taken per day
+```
 
 ## What is the average daily activity pattern?
 
