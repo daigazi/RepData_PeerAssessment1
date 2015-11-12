@@ -8,14 +8,16 @@ output:
 
 ## Loading and preprocessing the data
 
-uzip the file
+### 1.uzip the file
 
 ```{r,eval=T,echo=F}
-setwd("D:\\git\\reproucible\\RepData_PeerAssessment1\\")
+setwd("D:\\Git\\RepData_PeerAssessment1\\")
 ```
-
+### 2.read data
 ```{r,eval=T,echo=T}
-unzip(zipfile = "activity.zip") #uzip zip file 
+if(!exists("activity.csv")){
+      unzip(zipfile = "activity.zip") #uzip zip file   
+}
 dat=read.csv(file="activity.csv",header = T,sep = ",",
          stringsAsFactors = F) #read data
 dat$date=as.POSIXct(dat$date) #change date colume type
@@ -28,33 +30,114 @@ head(dat)
 
 ## What is mean total number of steps taken per day?
 
-```{r,eval=T,echo=T}
+### 1. Calculate the total number of steps taken per day
+```{r}
 tmp=dat[complete.cases(dat),] #without NA
 
 # Calculate the total number of steps taken per day
-per_day_steps=as.vector(tapply(tmp$steps,tmp$date,sum)) 
-date=names(tapply(tmp$steps,tmp$date,sum))
-per_day_steps=data.frame(total_steps=per_day_steps,
-                         date=date,stringsAsFactors = F)
-#per_day_steps$date=as.Date(per_day_steps$date,format="%Y-%m-%d")
+tapply(tmp$steps,tmp$date,sum)
+```
+
+### 2.  Make a histogram of the total number of steps taken each day
+```{r,eval=T,echo=T}
+
+#Make a histogram of the total number of steps taken each day
+library(plyr) #load plyr
+per_day_steps=ddply(.data = tmp,.variables = .(date),.fun = summarize,per_day_step=sum(steps))
+
 #  Make a histogram of the total number of steps taken each day
 library(ggplot2)
 library(scales)
 
-g=ggplot(data = per_day_steps,aes(x=date,y=total_steps))+geom_boxplot()
-g+scale_x_date(labels = date_format("%d"))
-tapply(tmp$steps,tmp$date,mean)
-#mean of the total number of steps taken per day
-tapply(tmp$steps,tmp$date,median)  
-#median of the total number of steps taken per day
+g=ggplot(data = per_day_steps,aes(x=date,y=per_day_step))
+g+geom_histogram(stat="identity")
+
+
 ```
+
+### 3.  Calculate and report the mean and median of the total number of steps taken per day
+```{r}
+#mean of the total number of steps taken per day
+per_day_mean_steps=ddply(.data = tmp,.variables = .(date),.fun = summarize,per_day_step=mean(steps))
+head(per_day_mean_steps)
+#median of the total number of steps taken per day
+per_day_median_steps=ddply(.data = tmp,.variables = .(date),.fun = summarize,per_day_step=median(steps))
+head(per_day_median_steps)
+
+```
+
 
 ## What is the average daily activity pattern?
 
+### 1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+```{r}
+df_interval=ddply(tmp,.(interval),summarize,mean_steps=mean(steps))
+g1=ggplot(data = df_interval,aes(x=interval,y=mean_steps))
+g1+geom_point()
+```
 
+### 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r}
+df_interval=ddply(tmp,.(interval),summarize,max_step=max(steps))
+g2=ggplot(data = df_interval,aes(x=interval,y=max_step))
+g2+geom_point()
+#print the max one
+df_interval[which.max(df_interval$max_step),]
+```
 
 ## Imputing missing values
+
+### 1. the total number of rows with NAs  
+the total number of rows with NAs`r nrow(dat)-nrow(tmp)`
+```{r}
+nrow(dat)-nrow(tmp)
+```
+
+### 2.  filling in all of the missing values in the dataset  
+```{r}
+dat[is.na(dat$steps),]$steps=median(tmp$steps)
+new_dat=dat
+```
+
+
+### 3.   Calculate and report the mean and median total number of steps taken per day 
+```{r}
+new_mean_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,new_mean_step=mean(steps))
+head(new_mean_steps)
+#median of the total number of steps taken per day
+new_median_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,new_median_steps=median(steps))
+head(new_mean_steps)
+
+#Make a histogram 
+
+g4=ggplot(data = new_mean_steps,aes(x=interval,y=new_mean_step))
+g4+geom_histogram()
+
+g5=ggplot(data = new_median_steps,aes(x=interval,y=new_median_steps))
+g5+geom_histogram()
+```
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### 1 .Create a new factor variable in the dataset with two levels – “weekday” and “weekend” i
+```{r,message=FALSE}
+is.weekend=function(x){
+        y=weekdays(x)
+        ifelse(y %in% c("星期六","星期日"),"weekend","weekday" )
+        }
+new_dat=ddply(.data = new_dat,.variables=c("steps","date","interval"),.fun = is.weekend,fact=is.weekend(date))
+```
+
+
+### 2. make plot
+```{r}
+intervals=ddply(.data = new_dat,.variables = .(fact),.fun = summarize,median_steps=median(steps),mean_steps=mean(steps))
+library(reshape2)
+df_melt=melt(data = intervals,value.name = c("date","interval","fact"))
+g5=ggplot(data = df_melt,aes(x=interval,y=values))
+g5+geom_line()+facet_grid(. ~ fact)
+
+```
+
