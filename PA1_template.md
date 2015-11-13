@@ -3,10 +3,10 @@
 
 ## Loading and preprocessing the data
 
-uzip the file
+### 1.uzip the file
 
 
-
+### 2.read data
 
 ```r
 if(!exists("activity.csv")){
@@ -147,10 +147,137 @@ head(per_day_median_steps)
 
 ## What is the average daily activity pattern?
 
+### 1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
+```r
+df_interval=ddply(tmp,.(interval),summarize,mean_steps=mean(steps))
+g1=ggplot(data = df_interval,aes(x=interval,y=mean_steps))
+g1+geom_point()
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
+
+### 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+
+```r
+df_interval=ddply(tmp,.(interval),summarize,max_step=max(steps))
+g2=ggplot(data = df_interval,aes(x=interval,y=max_step))
+g2+geom_point()
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-7-1.png) 
+
+```r
+#print the max one
+df_interval[which.max(df_interval$max_step),]
+```
+
+```
+##    interval max_step
+## 76      615      806
+```
 
 ## Imputing missing values
+
+### 1. the total number of rows with NAs  
+the total number of rows with NAs2304
+
+```r
+nrow(dat)-nrow(tmp)
+```
+
+```
+## [1] 2304
+```
+
+### 2.  filling in all of the missing values in the dataset  
+
+```r
+dat[is.na(dat$steps),]$steps=median(tmp$steps)
+new_dat=dat
+```
+
+
+### 3.   Calculate and report the mean and median total number of steps taken per day 
+
+```r
+total_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,all_step=sum(steps))
+#Make a histogram 
+
+g4=ggplot(data = total_steps,aes(x=date,y=all_step))
+g4+geom_histogram(stat="identity")
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
+
+```r
+new_mean_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,new_mean_step=mean(steps))
+head(new_mean_steps)
+```
+
+```
+##         date new_mean_step
+## 1 2012-10-01       0.00000
+## 2 2012-10-02       0.43750
+## 3 2012-10-03      39.41667
+## 4 2012-10-04      42.06944
+## 5 2012-10-05      46.15972
+## 6 2012-10-06      53.54167
+```
+
+```r
+#median of the total number of steps taken per day
+new_median_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,new_median_steps=median(steps))
+head(new_mean_steps)
+```
+
+```
+##         date new_mean_step
+## 1 2012-10-01       0.00000
+## 2 2012-10-02       0.43750
+## 3 2012-10-03      39.41667
+## 4 2012-10-04      42.06944
+## 5 2012-10-05      46.15972
+## 6 2012-10-06      53.54167
+```
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+### 1 .Create a new factor variable in the dataset with two levels – “weekday” and “weekend” i
+
+```r
+library(lubridate)
+```
+
+```
+## Warning: package 'lubridate' was built under R version 3.1.3
+```
+
+```r
+new_dat$wday=wday(new_dat$date)
+bre=c(0,5,7)
+new_dat$fact=cut(x = new_dat$wday,breaks = bre,labels = c("weekday","weekend"),include.lowest = F)
+```
+
+
+### 2. make plot
+
+```r
+intervals=ddply(.data = new_dat,.variables = .(fact,interval),.fun = summarize,median_steps=median(steps),mean_steps=mean(steps))
+library(reshape2)
+```
+
+```
+## Warning: package 'reshape2' was built under R version 3.1.2
+```
+
+```r
+df_melt=melt(data = intervals,c("interval","fact"))
+g5=ggplot(data = df_melt,aes(x=interval,y=value))
+g5+geom_line()+facet_grid(. ~ fact)
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-12-1.png) 
+
