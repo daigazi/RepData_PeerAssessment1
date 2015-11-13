@@ -1,12 +1,12 @@
 # Reproducible Research: Peer Assessment 1
 
 
-## Loading and preprocessing the data
+## 1.Loading and preprocessing the data
 
-### 1.uzip the file
+### 1.1.uzip the file
 
 
-### 2.read data
+### 1.2.read data
 
 ```r
 if(!exists("activity.csv")){
@@ -41,9 +41,9 @@ head(dat)
 
 
 
-## What is mean total number of steps taken per day?
+## 2.What is mean total number of steps taken per day?
 
-### 1. Calculate the total number of steps taken per day
+### 2.1 Calculate the total number of steps taken per day
 
 ```r
 tmp=dat[complete.cases(dat),] #without NA
@@ -73,7 +73,7 @@ tapply(tmp$steps,tmp$date,sum)
 ##      11834      11162      13646      10183       7047
 ```
 
-### 2.  Make a histogram of the total number of steps taken each day
+### 2.2.  Make a histogram of the total number of steps taken each day
 
 ```r
 #Make a histogram of the total number of steps taken each day
@@ -110,7 +110,7 @@ g+geom_histogram(stat="identity")
 
 ![](PA1_template_files/figure-html/unnamed-chunk-4-1.png) 
 
-### 3.  Calculate and report the mean and median of the total number of steps taken per day
+### 2.3.  Calculate and report the mean and median of the total number of steps taken per day
 
 ```r
 #mean of the total number of steps taken per day
@@ -145,9 +145,9 @@ head(per_day_median_steps)
 ```
 
 
-## What is the average daily activity pattern?
+## 3.What is the average daily activity pattern?
 
-### 1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+### 3.1.Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
 
 ```r
 df_interval=ddply(tmp,.(interval),summarize,mean_steps=mean(steps))
@@ -157,7 +157,7 @@ g1+geom_point()
 
 ![](PA1_template_files/figure-html/unnamed-chunk-6-1.png) 
 
-### 2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+### 3.2.Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
 ```r
 df_interval=ddply(tmp,.(interval),summarize,max_step=max(steps))
@@ -177,9 +177,9 @@ df_interval[which.max(df_interval$max_step),]
 ## 76      615      806
 ```
 
-## Imputing missing values
+## 4.Imputing missing values
 
-### 1. the total number of rows with NAs  
+### 4.1. the total number of rows with NAs  
 the total number of rows with NAs2304
 
 ```r
@@ -190,7 +190,7 @@ nrow(dat)-nrow(tmp)
 ## [1] 2304
 ```
 
-### 2.  filling in all of the missing values in the dataset  
+### 4.2.  filling in all of the missing values in the dataset  
 
 ```r
 dat[is.na(dat$steps),]$steps=median(tmp$steps)
@@ -198,7 +198,7 @@ new_dat=dat
 ```
 
 
-### 3.   Calculate and report the mean and median total number of steps taken per day 
+### 4.3.   Calculate and report the mean and median total number of steps taken per day 
 
 ```r
 total_steps=ddply(.data = new_dat,.variables = .(date),.fun = summarize,all_step=sum(steps))
@@ -243,9 +243,9 @@ head(new_mean_steps)
 
 
 
-## Are there differences in activity patterns between weekdays and weekends?
+## 5.Are there differences in activity patterns between weekdays and weekends?
 
-### 1 .Create a new factor variable in the dataset with two levels – “weekday” and “weekend” i
+### 5.1 .Create a new factor variable in the dataset with two levels – “weekday” and “weekend” i
 
 ```r
 library(lubridate)
@@ -262,7 +262,7 @@ new_dat$fact=cut(x = new_dat$wday,breaks = bre,labels = c("weekday","weekend"),i
 ```
 
 
-### 2. make plot
+### 5.2. make plot
 
 ```r
 intervals=ddply(.data = new_dat,.variables = .(fact,interval),.fun = summarize,median_steps=median(steps),mean_steps=mean(steps))
